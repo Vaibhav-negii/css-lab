@@ -1,0 +1,24 @@
+{
+  "name": "css-lab",
+  "version": "1.0.0",
+  "description": "CSS Fonts, Borders and Box Model - interactive site with a small Express backend",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-backend.js"
+  },
+  "keywords": [
+    "css",
+    "box-model",
+    "education",
+    "express"
+  ],
+  "author": "Vaibhav Negi",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

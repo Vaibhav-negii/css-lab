@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CSS Fonts, Borders and Box Model</title>
+<style>
+/* ===== Design tokens ===== */
+:root{--bg:#0b1224;--bg2:#141d36;--card:rgba(255,255,255,.055);--line:rgba(255,255,255,.12);--text:#e8edf7;--mute:#9aa7c2;
+--blue:#4f8cff;--coral:#ff7a66;--ok:#34d399;--warn:#fbbf24;
+--sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;--mono:Consolas,ui-monospace,"SF Mono",monospace;color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;font-family:var(--sans);color:var(--text);background:linear-gradient(160deg,var(--bg),var(--bg2) 60%,#0c1428);min-height:100vh;line-height:1.6}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:48px 48px;opacity:.3;animation:grid 16s linear infinite;mask-image:radial-gradient(ellipse at 50% 30%,#000 20%,transparent 75%)}
+@keyframes grid{to{background-position:48px 48px}}
+h1,h2,h3{line-height:1.15;margin:0 0 .5em}
+h1{font-size:clamp(2.1rem,5.4vw,3.6rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.4rem,3.2vw,2.05rem)}
+h3{font-size:1.12rem}
+p{margin:0 0 1em;color:var(--mute);max-width:68ch}
+code,pre{font-family:var(--mono)}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+/* ===== Navbar ===== */
+header{position:sticky;top:0;z-index:20;background:rgba(11,18,36,.8);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+nav{max-width:1100px;margin:auto;padding:.8rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.brand{font-weight:700;color:var(--text);text-decoration:none;letter-spacing:-.01em}.brand b{color:var(--blue)}.brand i{color:var(--coral);font-style:normal}
+nav ul{display:flex;gap:.3rem;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+nav a.link{color:var(--mute);text-decoration:none;padding:.4rem .8rem;border-radius:8px;transition:.2s;font-size:.95rem}
+nav a.link:hover{color:var(--text);background:var(--card)}
+nav a.link.on{color:#0b1224;background:var(--blue);font-weight:600}
+/* backend status pill */
+.pill{display:inline-flex;align-items:center;gap:.45rem;font:600 .72rem var(--mono);padding:.35rem .65rem;border-radius:999px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.pill .dot{width:.5rem;height:.5rem;border-radius:50%;background:#8a97ad;display:inline-block}
+.pill.ok{border-color:rgba(52,211,153,.5);color:#9ff0cd}
+.pill.ok .dot{background:#34d399;box-shadow:0 0 8px #34d399}
+.pill.bad{border-color:rgba(255,122,102,.45);color:#ffb3a6}
+.pill.bad .dot{background:#ff7a66}
+/* save / load bar */
+.savebar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--line)}
+.btn.sm{padding:.45rem .85rem;font-size:.85rem}
+.savestate{font-size:.82rem;color:var(--mute)}
+.savestate.err{color:#ffb3a6}
+.savestate.ok{color:#9ff0cd}
+
+/* ===== Pages ===== */
+main{max-width:1100px;margin:auto;padding:2.4rem 1.2rem 4rem}
+.page{display:none}
+.page section{margin-bottom:2.4rem}
+.page section:last-child{margin-bottom:0}
+.page.show{display:block;animation:enter .45s ease both}
+@keyframes enter{from{opacity:0;transform:translateY(16px)}}
+.rv{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+.rv.in{opacity:1;transform:none}
+
+/* ===== Cards ===== */
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.3rem;backdrop-filter:blur(10px);transition:.25s}
+.card p{margin:0;font-size:.94rem}
+button.card,.card.act{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+button.card:hover,.card.act:hover{transform:translateY(-4px);border-color:var(--blue);box-shadow:0 10px 30px -12px var(--blue)}
+.card.on{border-color:var(--coral);box-shadow:0 0 0 1px var(--coral) inset}
+.tag{font-family:var(--mono);font-weight:700;color:var(--blue);font-size:1.35rem;display:block;margin-bottom:.35rem}
+.tag.c{color:var(--coral)}
+.ico{display:inline-block;width:26px;height:18px;border:2px solid var(--blue);border-radius:3px;position:relative;vertical-align:middle}
+.ico-b{border-color:var(--coral)}
+.ico-m{background:rgba(79,140,255,.16)}
+.ico-m::after{content:"";position:absolute;inset:3px;border:1px dashed var(--coral);border-radius:2px}
+.btn{background:var(--blue);color:#0b1224;border:0;border-radius:10px;padding:.7rem 1.3rem;font:600 1rem var(--sans);cursor:pointer;text-decoration:none;display:inline-block;transition:.2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px -10px var(--blue)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--blue);color:var(--blue);box-shadow:none}
+
+/* ===== Hero ===== */
+.hero{display:grid;gap:2rem;grid-template-columns:1.1fr .9fr;align-items:center;margin:1.5rem 0 3rem}
+.hero .row{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.2rem}
+/* animated box-model illustration */
+.demo-box{position:relative;display:grid;place-items:center;min-height:250px;padding:1rem 1rem 2.6rem;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.bm-mini{display:grid;place-items:center;padding:26px;border:0;background:rgba(255,122,102,.14);outline:1px dashed rgba(255,122,102,.65);border-radius:12px;animation:breathe 4s ease-in-out infinite}
+.bm-mini:nth-child(1){animation-delay:0s}
+.bm2{display:grid;place-items:center;padding:0;background:transparent;border:5px solid rgba(251,191,36,.8);border-radius:8px;animation:breathe 4s ease-in-out .15s infinite}
+.bm3{display:grid;place-items:center;padding:22px;background:#1b2b4d;border-radius:6px;animation:breathe 4s ease-in-out .3s infinite}
+.bm4{display:grid;place-items:center;width:96px;height:56px;background:var(--blue);border-radius:4px;color:#08101f;font-weight:700;font-size:.8rem;letter-spacing:.04em}
+@keyframes breathe{0%,100%{padding-top:22px;padding-bottom:22px}50%{padding-top:34px;padding-bottom:34px}}
+.legend{position:absolute;left:0;right:0;bottom:.55rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin:0;font-size:.75rem;color:var(--mute)}
+.legend span{display:flex;align-items:center;gap:.4rem}
+.dot{width:.7rem;height:.7rem;border-radius:3px;display:inline-block}
+
+/* ===== Code blocks + tooltips ===== */
+pre{background:#060b18;border:1px solid var(--line);border-radius:12px;padding:1rem;overflow-x:auto;margin:0 0 1rem;font-size:.85rem;line-height:1.85;white-space:pre}
+.pre-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font:600 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.h{color:var(--blue);border-bottom:1px dotted var(--blue);cursor:help;position:relative}
+.h::after{content:attr(data-tip);position:absolute;left:0;bottom:130%;width:max-content;max-width:250px;white-space:normal;background:var(--bg2);border:1px solid var(--blue);color:var(--text);font:400 .78rem var(--sans);padding:.5rem .7rem;border-radius:8px;opacity:0;pointer-events:none;transform:translateY(4px);transition:.2s;z-index:6}
+.h:hover::after,.h:focus::after{opacity:1;transform:none}
+.cmt{color:#6f7f9e}.val{color:#ffd580}.sel{color:var(--coral)}.prop{color:#7fd1ff}
+.two{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.lbl{font-weight:600;margin-bottom:.4rem;color:var(--text);font-size:.95rem}
+
+/* ===== Steps ===== */
+ol.steps{list-style:none;counter-reset:s;padding:0;display:grid;gap:.7rem}
+ol.steps li{counter-increment:s;display:flex;gap:1rem;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem}
+ol.steps li::before{content:counter(s);flex:none;width:2rem;height:2rem;border-radius:50%;background:var(--blue);color:#0b1224;display:grid;place-items:center;font-weight:700}
+ol.steps b{color:var(--text)}ol.steps span{color:var(--mute);display:block;font-size:.92rem}
+
+/* ===== Lab controls ===== */
+.lab{display:grid;gap:1rem;grid-template-columns:minmax(260px,.85fr) 1.15fr}
+.ctrl{display:grid;gap:.15rem 1rem;grid-template-columns:1fr auto;align-items:center;margin:.55rem 0}
+.ctrl label{font-size:.88rem;color:var(--mute)}
+.ctrl output{font:600 .85rem var(--mono);color:var(--blue)}
+input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--blue);margin:.15rem 0 .3rem}
+select,input[type=text]{width:100%;background:#060b18;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:.55rem .6rem;font:.9rem var(--mono)}
+.seg{display:flex;gap:.4rem;flex-wrap:wrap}
+.seg button{background:#060b18;border:1px solid var(--line);color:var(--mute);border-radius:8px;padding:.45rem .8rem;font:.85rem var(--sans);cursor:pointer;transition:.2s}
+.seg button.on{border-color:var(--blue);color:var(--text);background:rgba(79,140,255,.16)}
+
+/* ===== Font playground ===== */
+.type-preview{background:radial-gradient(circle at 20% 10%,rgba(79,140,255,.12),transparent 60%),var(--card);border:1px solid var(--line);border-radius:14px;padding:1.4rem;min-height:170px;display:flex;flex-direction:column;justify-content:center}
+.type-preview p{margin:0;color:var(--text);max-width:none}
+.type-preview .hint{color:var(--mute);font-size:.8rem;margin-top:1rem}
+code.out{display:block;background:#060b18;border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;font-size:.85rem;line-height:1.7;color:#d7e2f4;white-space:pre;overflow-x:auto}
+.spec{display:flex;gap:1.1rem;flex-wrap:wrap;align-items:baseline;margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--line);color:var(--mute);font-size:1.15rem}
+
+/* ===== Border builder ===== */
+.styles{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}
+.styles button{background:#fff;border-radius:8px;height:52px;cursor:pointer;transition:.2s;border:3px solid var(--blue)}
+.styles button:nth-child(2){border-style:dashed}.styles button:nth-child(3){border-style:dotted}
+.styles button:nth-child(4){border-style:double;border-width:6px}.styles button:nth-child(5){border-style:groove;border-width:6px}
+.styles button:nth-child(6){border-color:#060b18}
+.styles button.on{box-shadow:0 0 0 3px var(--coral);transform:translateY(-2px)}
+.styles button span{display:block;font:600 .62rem var(--mono);color:#0b1224}
+.border-preview{display:grid;place-items:center;min-height:180px;background:var(--card);border-radius:14px;padding:1rem}
+#borderBox{display:grid;place-items:center;width:100%;max-width:330px;height:120px;background:rgba(79,140,255,.1);color:var(--text);font:600 .9rem var(--mono);transition:.15s}
+.swatches{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap}
+.swatches button{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.swatches button.on{border-color:#fff;transform:scale(1.1)}
+
+/* ===== Box model inspector ===== */
+.bm-stage{display:grid;place-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.2rem;min-height:330px;overflow:auto}
+.inspector{display:inline-block;padding:24px;background:rgba(255,122,102,.12);outline:1px dashed rgba(255,122,102,.6);transition:.15s}
+.bm-label{font:600 .6rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#ffb3a6;text-align:left;margin-bottom:2px}
+.bm-b{display:block;border:6px solid var(--blue);background:transparent;padding:0;transition:.15s}
+.bm-b .bm-label{color:#ffd27a;padding:2px 4px 0}
+.bm-p{display:block;padding:22px;background:#1b2b4d;transition:.15s}
+.bm-p .bm-label{color:#9dc0ff;padding:4px 4px 0}
+.bm-c{display:grid;place-items:center;width:300px;height:150px;background:var(--blue);color:#08101f;font:700 .85rem var(--mono);text-align:center;transition:.15s}
+.bm-read{display:grid;gap:.5rem;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));margin-top:1rem}
+.bm-read div{background:#060b18;border:1px solid var(--line);border-radius:10px;padding:.6rem .8rem}
+.bm-read span{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.bm-read b{font:700 1.15rem var(--mono);color:var(--blue)}
+.bm-read b.total{color:var(--coral)}
+
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--line);font-size:.9rem;vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase}
+td code{font-size:.86rem}
+
+/* ===== Modal ===== */
+dialog{background:var(--bg2);color:var(--text);border:1px solid var(--blue);border-radius:18px;max-width:min(560px,92vw);width:100%;padding:1.6rem;box-shadow:0 30px 80px -20px #000}
+dialog[open]{animation:pop .3s cubic-bezier(.2,1.3,.4,1)}
+dialog::backdrop{background:rgba(3,6,15,.7);backdrop-filter:blur(4px)}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(14px)}}
+dialog h3{font-size:1.35rem}dialog p{max-width:none}
+dialog .x{float:right;background:none;border:1px solid var(--line);color:var(--text);border-radius:8px;width:2rem;height:2rem;cursor:pointer}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1rem;font-size:.9rem;margin:1rem 0 0}
+.kv dt{color:var(--blue);font-weight:600}.kv dd{margin:0;color:var(--mute)}
+
+footer{border-top:1px solid var(--line);padding:1.5rem 1.2rem;text-align:center;color:var(--mute);font-size:.88rem}
+footer b{color:var(--text)}
+@media(max-width:820px){.hero,.lab{grid-template-columns:1fr}.bm-stage{min-height:250px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+@media print{
+  header,nav,footer{display:none}
+  body{background:#fff;color:#111}
+  .page{display:block!important;page-break-after:always}
+  .rv{opacity:1!important;transform:none!important}
+  .card,pre,code.out,.bm-stage{background:#f7f8fa!important;color:#111!important;border-color:#d5d9e2!important}
+  h1,h2,h3,.lbl,p{color:#111!important}
+}
+</style>
+</head>
+<body>
+<header><nav>
+  <a class="brand" href="#home">CSS<b>Lab</b> <i>·</i> Vaibhav Negi</a>
+  <ul>
+    <li><a class="link" href="#home">Home</a></li>
+    <li><a class="link" href="#fonts">Fonts</a></li>
+    <li><a class="link" href="#borders">Borders</a></li>
+    <li><a class="link" href="#boxmodel">Box model</a></li>
+    <li><a class="link" href="#summary">Summary</a></li>
+    </ul>
+  <span class="pill" id="apiPill" title="Backend status"><i class="dot"></i><span id="apiPillText">checking…</span></span>
+</nav></header>
+
+<main>
+<!-- ============ PAGE 1: HOME ============ -->
+<div class="page" id="home">
+  <div class="hero">
+    <div>
+      <h1>Text, edges and space.</h1>
+      <p>Every element on a web page is a rectangle wearing three layers. CSS fonts decide how the words look, borders draw the edge, and the box model decides how much room the rectangle takes. Learn these three and every layout becomes predictable.</p>
+      <div class="row"><a class="btn" href="#fonts">Start with fonts</a><a class="btn ghost" href="#boxmodel">Play with the box model</a></div>
+    </div>
+    <div class="demo-box" aria-label="Animation of a content box growing inside padding, border and margin layers">
+      <div class="bm-mini">
+        <div class="bm2">
+          <div class="bm3"><div class="bm4">content</div></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:rgba(255,122,102,.75)"></i> margin</span>
+        <span><i class="dot" style="background:rgba(251,191,36,.8)"></i> border</span>
+        <span><i class="dot" style="background:#1b2b4d;border:1px solid #4f8cff"></i> padding</span>
+        <span><i class="dot" style="background:var(--blue)"></i> content</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="rv">
+    <h2>The idea in three parts</h2>
+    <div class="grid">
+      <button class="card" data-t="fonts"><span class="tag">Aa</span><h3>Fonts</h3><p>Family, size, weight and line-height decide whether a page is comfortable to read.</p></button>
+      <button class="card" data-t="borders"><span class="tag"><i class="ico ico-b"></i></span><h3>Borders</h3><p>Width, style and colour draw the visible edge. Radius softens the corners.</p></button>
+      <button class="card" data-t="model"><span class="tag"><i class="ico ico-m"></i></span><h3>Box model</h3><p>Content, padding, border and margin: the four layers that make up every rectangle.</p></button>
+    </div>
+  </section>
+
+  <section class="rv">
+    <h2>Why it matters for web development</h2>
+    <p>A page that "looks broken" is almost always a font choice, a border addition or an unexpected box size. Once you know the three layers, you can read a layout in DevTools and fix it in seconds instead of guessing.</p>
+  </section>
+</div>
+
+<!-- ============ PAGE 2: FONTS ============ -->
+<div class="page" id="fonts">
+  <h1>CSS fonts</h1>
+  <p>Fonts are controlled by five properties. Change them here and watch the text respond — this is exactly what the CSS on the right does.</p>
+
+  <section class="rv">
+    <div class="lab">
+      <div class="card">
+        <div class="lbl">Controls</div>
+        <div class="ctrl"><label for="fFamily">font-family</label><output id="oFamily"></output>
+          <select id="fFamily">
+            <option value="'Segoe UI', Arial, sans-serif">Segoe UI (sans)</option>
+            <option value="Georgia, 'Times New Roman', serif">Georgia (serif)</option>
+            <option value="Consolas, 'Courier New', monospace">Consolas (mono)</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans (display)</option>
+          </select>
+        </div>
+        <div class="ctrl"><label for="fSize">font-size</label><output id="oSize"></output>
+          <input type="range" id="fSize" min="12" max="42" step="1" value="22">
+        </div>
+        <div class="ctrl"><label for="fWeight">font-weight</label><output id="oWeight"></output>
+          <input type="range" id="fWeight" min="300" max="900" step="100" value="700">
+        </div>
+        <div class="ctrl"><label for="fLine">line-height</label><output id="oLine"></output>
+          <input type="range" id="fLine" min="1" max="2.4" step=".1" value="1.5">
+        </div>
+        <div class="ctrl"><label for="fSpace">letter-spacing</label><output id="oSpace"></output>
+          <input type="range" id="fSpace" min="0" max="8" step=".5" value="0">
+        </div>
+      </div>
+      <div class="card">
+        <div class="lbl">Live preview</div>
+        <div class="type-preview">
+          <p id="fPreview">The quick brown fox jumps over the lazy dog.</p>
+          <p class="hint">Line-height is the space between lines. Around 1.5 is the comfortable range for body text.</p>
+        </div>
+        <div class="spec" id="fSpecimen">
+          <span style="font-weight:300">Light 300</span>
+          <span style="font-weight:400">Regular 400</span>
+          <span style="font-weight:700">Bold 700</span>
+          <span style="font-weight:900">Black 900</span>
+        </div>
+      </div>
+    </div>
+    <div class="two" style="margin-top:1rem">
+      <div>
+        <div class="pre-head"><span>style.css</span><span>generated from your sliders</span></div>
+        <code class="out" id="fCss"></code>
+      </div>
+      <div class="card">
+        <div class="lbl">Reading the result</div>
+        <p id="fNote" style="margin:0"></p>
+        <div class="lbl" style="margin-top:1.1rem">Good defaults</div>
+        <p style="margin:0;font-size:.9rem">Body text 16px with line-height 1.5 · headings 1.5–2.5rem at weight 700 · small labels around 0.85rem with 1px letter-spacing.</p>
+      </div>
+    </div>
+    <div class="savebar" data-page="fonts">
+      <button class="btn sm" data-save>Save my settings</button>
+      <button class="btn ghost sm" data-load>Load saved</button>
+      <span class="savestate" data-state>Settings are not saved yet.</span>
+    </div>
+  </section>
+
+  <section class="rv">
+    <h2>The properties</h2>
+    <p>Hover or focus a property name to see what it does.</p>
+    <pre><span class="sel">h1</span> {
+  <span class="h" tabindex="0" data-tip="The typeface, written as a fallback stack. The browser uses the first one it finds.">font-family</span>: <span class="val">"Segoe UI", Arial, sans-serif</span>;
+  <span class="h" tabindex="0" data-tip="How big the text is. px is fixed; rem follows the root font size and respects user settings.">font-size</span>: <span class="val">2rem</span>;
+  <span class="h" tabindex="0" data-tip="Thickness of the strokes: 100 to 900. normal is 400 and bold is 700.">font-weight</span>: <span class="val">700</span>;
+  <span class="h" tabindex="0" data-tip="Space between lines. A unitless number multiplies the current font size, so 1.5 always scales.">line-height</span>: <span class="val">1.5</span>;
+  <span class="h" tabindex="0" data-tip="Extra space between characters. Useful for small caps and headings.">letter-spacing</span>: <span class="val">1px</span>;
+}</pre>
+  </section>
+
+  <section class="rv">
+    <h2>Units and font stacks</h2>
+    <div class="two">
+      <div class="card">
+        <div class="lbl">Choosing a unit</div>
+        <table>
+          <thead><tr><th>Unit</th><th>Based on</th><th>Use it for</th></tr></thead>
+          <tbody>
+            <tr><td><code>px</code></td><td>Screen pixels</td><td>Borders, exact sizes</td></tr>
+            <tr><td><code>em</code></td><td>Parent font size</td><td>Spacing inside a component</td></tr>
+            <tr><td><code>rem</code></td><td>Root font size</td><td>Text sizes, page rhythm</td></tr>
+            <tr><td><code>%</code></td><td>Parent size</td><td>Fluid widths</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="lbl">A safe fallback stack</div>
+        <pre style="margin:0"><span class="sel">body</span> {
+  <span class="prop">font-family</span>: <span class="val">"Segoe UI",</span>
+               <span class="val">system-ui,</span>
+               <span class="val">Arial, sans-serif</span>;
+}</pre>
+        <p style="margin:.8rem 0 0;font-size:.9rem">The browser walks the list left to right. Ending with <code>sans-serif</code> guarantees that text is never invisible because a font is missing.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ PAGE 3: BORDERS ============ -->
+<div class="page" id="borders">
+  <h1>CSS borders</h1>
+  <p>A border needs three things: a width, a style and a colour. Pick a style below, then adjust the size, radius and colour.</p>
+
+  <section class="rv">
+    <h2>Pick a border style</h2>
+    <div class="styles" id="stylePicker" role="group" aria-label="Border styles">
+      <button data-style="solid" class="on" aria-pressed="true"><span>solid</span></button>
+      <button data-style="dashed" aria-pressed="false"><span>dashed</span></button>
+      <button data-style="dotted" aria-pressed="false"><span>dotted</span></button>
+      <button data-style="double" aria-pressed="false"><span>double</span></button>
+      <button data-style="groove" aria-pressed="false"><span>groove</span></button>
+      <button data-style="none" aria-pressed="false"><span>none</span></button>
+    </div>
+  </section>
+
+  <section class="rv">
+    <div class="lab" style="margin-top:1rem">
+      <div class="card">
+        <div class="lbl">Shape</div>
+        <div class="ctrl"><label for="bWidth">border-width</label><output id="oBw"></output>
+          <input type="range" id="bWidth" min="0" max="14" step="1" value="4">
+        </div>
+        <div class="ctrl"><label for="bRadius">border-radius</label><output id="oBr"></output>
+          <input type="range" id="bRadius" min="0" max="60" step="1" value="12">
+        </div>
+        <div class="lbl" style="margin-top:.9rem">border-color</div>
+        <div class="swatches" id="swatches">
+          <button data-color="#4f8cff" style="background:#4f8cff" class="on" aria-label="Blue"></button>
+          <button data-color="#ff7a66" style="background:#ff7a66" aria-label="Coral"></button>
+          <button data-color="#34d399" style="background:#34d399" aria-label="Green"></button>
+          <button data-color="#fbbf24" style="background:#fbbf24" aria-label="Amber"></button>
+          <button data-color="#e8edf7" style="background:#e8edf7" aria-label="White"></button>
+        </div>
+        <p style="font-size:.85rem;margin:1rem 0 .5rem">A radius of <code>50%</code> turns a square into a circle — try it on a small element.</p>
+        <div class="seg" id="radiusPresets" role="group" aria-label="Radius presets">
+          <button data-r="0px">Square</button>
+          <button data-r="12px">Card</button>
+          <button data-r="60px">Pill</button>
+          <button data-r="50%">Circle</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="lbl">Result</div>
+        <div class="border-preview"><div id="borderBox">.card</div></div>
+        <div class="pre-head" style="margin-top:1rem"><span>borders.css</span></div>
+        <code class="out" id="bCss" style="margin:0"></code>
+        <div class="savebar">
+          <button class="btn sm" data-save>Save my settings</button>
+          <button class="btn ghost sm" data-load>Load saved</button>
+          <span class="savestate" data-state>Settings are not saved yet.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rv">
+    <h2>Every side, or just one</h2>
+    <div class="two">
+      <div>
+        <pre><span class="cmt">/* all four sides at once */</span>
+<span class="sel">.card</span> {
+  <span class="h" tabindex="0" data-tip="Shorthand for width, style and colour applied to every side.">border</span>: <span class="val">2px solid #4f8cff</span>;
+  <span class="h" tabindex="0" data-tip="Rounds the corners. Use 50% for a circle.">border-radius</span>: <span class="val">12px</span>;
+}
+
+<span class="cmt">/* one side only */</span>
+<span class="sel">.tab</span> {
+  <span class="h" tabindex="0" data-tip="Any side can be styled on its own: border-top, border-right, border-bottom, border-left.">border-bottom</span>: <span class="val">3px solid #ff7a66</span>;
+}</pre>
+      </div>
+      <div class="card">
+        <div class="lbl">Things worth remembering</div>
+        <ol class="steps">
+          <li><div><b>A border adds to the size</b><span>In the default box model, a 2px border on each side makes the element 4px wider.</span></div></li>
+          <li><div><b>Style is required</b><span>A border with no style stays invisible, even if a width and colour are set.</span></div></li>
+          <li><div><b>Radius needs a background or border to show</b><span>The corner is only visible where something is drawn.</span></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ PAGE 4: BOX MODEL ============ -->
+<div class="page" id="boxmodel">
+  <h1>The box model</h1>
+  <p>Every element is a rectangle inside three other rectangles. Move the sliders and watch the total size change — this is the exact set of boxes DevTools shows you.</p>
+
+  <section class="rv">
+    <div class="lab">
+      <div class="card">
+        <div class="lbl">Dimensions</div>
+        <div class="ctrl"><label for="mWidth">content width</label><output id="oMw"></output>
+          <input type="range" id="mWidth" min="120" max="320" step="10" value="300">
+        </div>
+        <div class="ctrl"><label for="mPad">padding</label><output id="oMp"></output>
+          <input type="range" id="mPad" min="0" max="40" step="2" value="22">
+        </div>
+        <div class="ctrl"><label for="mBorder">border-width</label><output id="oMb"></output>
+          <input type="range" id="mBorder" min="0" max="16" step="1" value="6">
+        </div>
+        <div class="ctrl"><label for="mMargin">margin</label><output id="oMm"></output>
+          <input type="range" id="mMargin" min="0" max="40" step="2" value="24">
+        </div>
+        <div class="lbl" style="margin-top:.8rem">box-sizing</div>
+        <div class="seg" id="sizing" role="group" aria-label="box-sizing">
+          <button data-sizing="content-box" class="on" aria-pressed="true">content-box</button>
+          <button data-sizing="border-box" aria-pressed="false">border-box</button>
+        </div>
+        <p style="margin:1rem 0 0;font-size:.86rem">Width and height describe the content box unless box-sizing says otherwise. Turn on the browser's inspect tool and the same four boxes appear around the highlighted element.</p>
+      </div>
+      <div class="card">
+        <div class="lbl">The boxes</div>
+        <div class="bm-stage">
+          <div class="inspector" id="insp">
+            <div class="bm-label" id="lblMargin">margin</div>
+            <div class="bm-b" id="borderLayer">
+              <div class="bm-label" id="lblBorder">border</div>
+              <div class="bm-p" id="padLayer">
+                <div class="bm-label" id="lblPad">padding</div>
+                <div class="bm-c" id="contentBox">300 × 150</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bm-read">
+          <div><span>content</span><b id="rContent">300px</b></div>
+          <div><span>+ padding</span><b id="rPad">0px</b></div>
+          <div><span>+ border</span><b id="rBorder">0px</b></div>
+          <div><span>= total width</span><b class="total" id="rTotal">0px</b></div>
+        </div>
+        <div class="savebar">
+          <button class="btn sm" data-save>Save my settings</button>
+          <button class="btn ghost sm" data-load>Load saved</button>
+          <span class="savestate" data-state>Settings are not saved yet.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rv">
+    <h2>content-box vs border-box</h2>
+    <p>Switch the toggle above and watch the numbers. With <code>content-box</code> the width you set is the content only, so padding and border make the box bigger. With <code>border-box</code> the width already includes them.</p>
+    <div class="two">
+      <div class="card">
+        <div class="lbl">The rule most projects start with</div>
+        <pre style="margin:0"><span class="sel">*, *::before, *::after</span> {
+  <span class="prop">box-sizing</span>: <span class="val">border-box</span>;
+}</pre>
+        <p style="margin:.8rem 0 0;font-size:.9rem">Put this at the top of the stylesheet. After that, <code>width: 300px</code> always means 300px on screen, whatever you add inside.</p>
+      </div>
+      <div class="card">
+        <div class="lbl">margin is different</div>
+        <p style="margin:0;font-size:.92rem">Margin is never part of the width, in either mode. It is the empty space outside the border that pushes other elements away — and the only layer you can also set to <code>auto</code> to centre a block.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="rv">
+    <h2>One line to remember</h2>
+    <pre style="margin:0">total width = content + (padding × 2) + (border × 2) + (margin × 2)
+total height = content + (padding × 2) + (border × 2) + (margin × 2)</pre>
+  </section>
+</div>
+
+<!-- ============ PAGE 5: SUMMARY ============ -->
+<div class="page" id="summary">
+  <h1>Key takeaways</h1>
+  <p>Fonts shape the voice, borders define the edge, and the box model decides how much space everything takes. Select a card for a little more detail.</p>
+
+  <section class="rv">
+    <div class="grid">
+      <button class="card" data-k="0"><span class="tag">01</span><h3>Fonts shape the voice</h3><p>Family, size, weight and line-height decide how readable the page is.</p></button>
+      <button class="card" data-k="1"><span class="tag c">02</span><h3>Borders define the edge</h3><p>Width + style + colour, with radius for softer corners.</p></button>
+      <button class="card" data-k="2"><span class="tag">03</span><h3>The box model rules space</h3><p>content → padding → border → margin, in that order, always.</p></button>
+      <button class="card" data-k="3"><span class="tag c">04</span><h3>border-box prevents surprises</h3><p>Set it once globally and widths finally mean what you expect.</p></button>
+    </div>
+  </section>
+
+  <section class="rv">
+    <h2>Project details</h2>
+    <div class="two">
+      <div class="card">
+        <div class="lbl">Presented by</div>
+        <p style="margin:0"><b style="color:var(--text);font-size:1.15rem">Vaibhav Negi</b><br>
+        BCA (2024–2027)<br>
+        IITM College Of Engineering</p>
+        <p style="margin:.8rem 0 0">Web Application Development</p>
+      </div>
+      <div class="card">
+        <div class="lbl">Covered in this project</div>
+        <p style="margin:0">CSS fonts and the <code>font</code> shorthand · units and fallback stacks · border width, style, colour and radius · the four layers of the box model · <code>box-sizing</code> and why it matters.</p>
+      </div>
+    </div>
+  </section>
+
+  <p style="margin-top:2rem"><a class="btn ghost" href="#home">Back to the start</a></p>
+</div>
+</main>
+
+<footer>CSS Fonts, Borders and Box Model · <b>Vaibhav Negi</b> · IITM College Of Engineering · BCA (2024–2027) · Web Application Development</footer>
+
+<dialog id="dlg" aria-labelledby="dt"><button class="x" id="dx" aria-label="Close">✕</button><div id="dc"></div></dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* ===== Modal ===== */
+const dlg = $("#dlg");
+const openModal = html => { $("#dc").innerHTML = html; dlg.showModal(); };
+
+const HOME_INFO = {
+  fonts:{t:"Fonts",d:"CSS gives you five controls over type: family, size, weight, line-height and letter-spacing. Together they decide whether a paragraph feels cramped or comfortable."},
+  borders:{t:"Borders",d:"A border is width + style + colour. Style is compulsory — a border with no style stays invisible. border-radius rounds the corners and 50% makes a circle."},
+  model:{t:"Box model",d:"Content, padding, border and margin. Width and height describe the content box by default, which is why adding padding makes an element grow."}
+};
+const TAKE = [
+  {t:"Fonts shape the voice",d:"A readable page usually uses one family, a size around 16px for body text and a line-height between 1.4 and 1.6.",kv:[["Body text","16px / 1.5"],["Heading","1.5rem and up, weight 700"],["Tip","Use rem so the user's font size still works"]]},
+  {t:"Borders define the edge",d:"Border shorthand is width, style and colour in any order. Individual sides can be styled separately, which is how tabs and tables get their lines.",kv:[["Shorthand","border: 2px solid #4f8cff"],["Circle","border-radius: 50%"],["Memory aid","width-style-colour"]]},
+  {t:"The box model rules space",d:"Every element is four rectangles: content, padding, border and margin. Padding is inside the border, margin is outside it, and only margin can centre a block with auto.",kv:[["Total width","content + padding + border + margin"],["Inside","padding"],["Outside","margin"]]},
+  {t:"border-box prevents surprises",d:"With border-box the width you write includes padding and border, so a 300px card stays 300px. Most resets apply it to every element.",kv:[["Reset","* { box-sizing: border-box }"],["Default","content-box"],["Effect","width = visible width"]]}
+];
+
+document.addEventListener("click", e => {
+  const home = e.target.closest("[data-t]");
+  if(home){ const x = HOME_INFO[home.dataset.t];
+    openModal(`<h3>${x.t}</h3><p>${x.d}</p>`); }
+  const k = e.target.closest("[data-k]");
+  if(k){ const x = TAKE[k.dataset.k];
+    openModal(`<h3>${x.t}</h3><p>${x.d}</p><dl class="kv">${x.kv.map(([a,b]) => `<dt>${a}</dt><dd><code>${b}</code></dd>`).join("")}</dl>`); }
+  if(e.target === dlg || e.target.id === "dx") dlg.close();
+});
+
+/* ===== Hash router + scroll reveal ===== */
+const ROUTES = ["home","fonts","borders","boxmodel","summary"];
+function route(){
+  const id = ROUTES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+  $$(".page").forEach(p => p.classList.toggle("show", p.id === id));
+  $$("a.link").forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
+  window.scrollTo({top:0,behavior:"instant"});
+  $$(`#${id} .rv`).forEach(el => { el.classList.remove("in"); io.observe(el); });
+}
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+}), {threshold:.12});
+addEventListener("hashchange", route); route();
+
+/* ===== Font playground ===== */
+const f = {family:$("#fFamily"), size:$("#fSize"), weight:$("#fWeight"), line:$("#fLine"), space:$("#fSpace")};
+function renderFonts(){
+  const fam = f.family.value, size = +f.size.value, weight = +f.weight.value,
+        line = +f.line.value, space = +f.space.value;
+  const p = $("#fPreview");
+  p.style.fontFamily = fam; p.style.fontSize = size + "px";
+  p.style.fontWeight = weight; p.style.lineHeight = line;
+  p.style.letterSpacing = space + "px";
+  $("#fSpecimen").style.fontFamily = fam;
+
+  const shortFam = fam.split(",")[0].trim();
+  $("#oFamily").textContent = shortFam;
+  $("#oSize").textContent = size + "px";
+  $("#oWeight").textContent = weight;
+  $("#oLine").textContent = line.toFixed(1);
+  $("#oSpace").textContent = space + "px";
+
+  $("#fCss").textContent =
+`h1 {
+  font-family: ${fam};
+  font-size: ${size}px;
+  font-weight: ${weight};
+  line-height: ${line.toFixed(1)};
+  letter-spacing: ${space}px;
+}`;
+
+  let note;
+  if(size < 14) note = "This is smaller than comfortable body text on screen. Anything under about 14px starts to strain the eyes.";
+  else if(line < 1.3) note = "The lines are packed tightly. Below 1.3 the descenders begin to touch the next line.";
+  else if(line > 2) note = "A lot of air between lines. Fine for headings with a short measure, tiring for long paragraphs.";
+  else if(space > 4) note = "Wide letter-spacing works for a short heading, but long paragraphs become slow to read.";
+  else if(weight >= 700) note = "Heavy weight is good for headings. Body copy is easier at 400 or 500.";
+  else note = "A balanced setting: comfortable size, readable weight and steady line spacing.";
+  $("#fNote").textContent = note;
+}
+Object.values(f).forEach(el => el.addEventListener("input", renderFonts));
+renderFonts();
+
+/* ===== Border builder ===== */
+const B = {style:"solid", width:4, radius:12, radiusCss:"12px", color:"#4f8cff"};
+function renderBorder(){
+  const box = $("#borderBox");
+  box.style.borderStyle = B.style;
+  box.style.borderWidth = (B.style === "none" ? 0 : B.width) + "px";
+  box.style.borderColor = B.color;
+  box.style.borderRadius = B.radiusCss;
+
+  $("#oBw").textContent = (B.style === "none" ? 0 : B.width) + "px";
+  $("#oBr").textContent = B.radiusCss;
+  const borderDecl = B.style === "none" ? "border: 0;" : `border: ${B.width}px ${B.style} ${B.color};`;
+  $("#bCss").textContent =
+`.card {
+  ${borderDecl}
+  border-radius: ${B.radiusCss};
+}`.replace(/\s+$/gm, "");
+}
+$("#stylePicker").addEventListener("click", e => {
+  const b = e.target.closest("[data-style]"); if(!b) return;
+  B.style = b.dataset.style;
+  $$("#stylePicker button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
+  renderBorder();
+});
+$("#swatches").addEventListener("click", e => {
+  const b = e.target.closest("[data-color]"); if(!b) return;
+  B.color = b.dataset.color;
+  $$("#swatches button").forEach(x => { x.classList.toggle("on", x === b); });
+  renderBorder();
+});
+$("#bWidth").addEventListener("input", e => { B.width = +e.target.value; renderBorder(); });
+$("#bRadius").addEventListener("input", e => { B.radiusCss = (+e.target.value) + "px"; renderBorder(); });
+$("#radiusPresets").addEventListener("click", e => {
+  const b = e.target.closest("[data-r]"); if(!b) return;
+  B.radiusCss = b.dataset.r;
+  const n = parseFloat(b.dataset.r);
+  if(b.dataset.r.endsWith("px")) $("#bRadius").value = Math.min(60, n);
+  $$("#radiusPresets button").forEach(x => x.classList.toggle("on", x === b));
+  renderBorder();
+});
+renderBorder();
+
+/* ===== Box model inspector ===== */
+const M = {w:300, h:150, pad:22, bw:6, mar:24, sizing:"content-box"};
+function renderModel(){
+  const contentW = M.sizing === "border-box" ? Math.max(40, M.w - 2 * (M.pad + M.bw)) : M.w;
+
+  const insp = $("#insp"), borderLayer = $("#borderLayer"), padLayer = $("#padLayer");
+  insp.style.padding = M.mar + "px";
+  borderLayer.style.borderWidth = M.bw + "px";
+  padLayer.style.padding = M.pad + "px";
+  $("#contentBox").style.width = contentW + "px";
+  $("#contentBox").style.height = M.h + "px";
+
+  $("#lblMargin").style.display = M.mar >= 14 ? "block" : "none";
+  $("#lblBorder").style.display = M.bw >= 12 ? "block" : "none";
+  $("#lblPad").style.display = M.pad >= 14 ? "block" : "none";
+
+  $("#oMw").textContent = M.w + "px";
+  $("#oMp").textContent = M.pad + "px";
+  $("#oMb").textContent = M.bw + "px";
+  $("#oMm").textContent = M.mar + "px";
+
+  $("#contentBox").textContent = Math.round(contentW) + " × " + M.h + "px";
+  $("#rContent").textContent = Math.round(contentW) + "px";
+  $("#rPad").textContent = (2 * M.pad) + "px";
+  $("#rBorder").textContent = (2 * M.bw) + "px";
+  const total = Math.round(contentW) + 2 * M.pad + 2 * M.bw + 2 * M.mar;
+  $("#rTotal").textContent = total + "px";
+}
+$("#mWidth").addEventListener("input", e => { M.w = +e.target.value; renderModel(); });
+$("#mPad").addEventListener("input", e => { M.pad = +e.target.value; renderModel(); });
+$("#mBorder").addEventListener("input", e => { M.bw = +e.target.value; renderModel(); });
+$("#mMargin").addEventListener("input", e => { M.mar = +e.target.value; renderModel(); });
+$("#sizing").addEventListener("click", e => {
+  const b = e.target.closest("[data-sizing]"); if(!b) return;
+  M.sizing = b.dataset.sizing;
+  $$("#sizing button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
+  renderModel();
+});
+renderModel();
+
+/* ===== Backend: status pill, save and load ===== */
+const deviceId = (() => {
+  try {
+    let id = localStorage.getItem("csslab.deviceId");
+    if (!id) { id = "dev-" + Math.random().toString(36).slice(2, 10); localStorage.setItem("csslab.deviceId", id); }
+    return id;
+  } catch { return "dev-" + Math.random().toString(36).slice(2, 10); }
+})();
+
+let apiOnline = false;
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.status + " " + res.statusText);
+  return data;
+}
+
+function setPill(kind, text, title) {
+  const pill = $("#apiPill");
+  pill.classList.remove("ok", "bad");
+  if (kind) pill.classList.add(kind);
+  $("#apiPillText").textContent = text;
+  if (title) pill.title = title;
+}
+
+async function checkBackend(attempt = 1) {
+  try {
+    const h = await api("/api/health");
+    apiOnline = true;
+    setPill("ok", "backend online", `css-lab-api v${h.version} · uptime ${h.uptimeSeconds}s`);
+  } catch {
+    if (attempt < 4) {
+      /* free hosting sleeps when idle: give it time to wake up */
+      setPill("", "waking server… " + attempt + "/4", "The free server sleeps when nobody visits; waiting for it to start.");
+      await new Promise(r => setTimeout(r, 4000));
+      return checkBackend(attempt + 1);
+    }
+    apiOnline = false;
+    setPill("bad", "offline (static file)", "Open the project with node server.js to save settings.");
+  }
+  return apiOnline;
+}
+
+/* collect the three playgrounds into one payload */
+function currentSettings() {
+  return {
+    fonts: {
+      family: f.family.value,
+      size: +f.size.value,
+      weight: +f.weight.value,
+      lineHeight: +f.line.value,
+      letterSpacing: +f.space.value
+    },
+    borders: { style: B.style, width: B.width, radius: B.radiusCss, color: B.color },
+    boxModel: { width: M.w, padding: M.pad, borderWidth: M.bw, margin: M.mar, sizing: M.sizing }
+  };
+}
+
+function syncControls() {
+  $$("#stylePicker button").forEach(b => { const on = b.dataset.style === B.style; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+  $$("#swatches button").forEach(b => b.classList.toggle("on", b.dataset.color === B.color));
+  $$("#radiusPresets button").forEach(b => b.classList.toggle("on", b.dataset.r === B.radiusCss));
+  $$("#sizing button").forEach(b => { const on = b.dataset.sizing === M.sizing; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+}
+
+function applySettings(s) {
+  if (s.fonts) {
+    f.family.value = s.fonts.family; f.size.value = s.fonts.size;
+    f.weight.value = s.fonts.weight; f.line.value = s.fonts.lineHeight;
+    f.space.value = s.fonts.letterSpacing;
+    renderFonts();
+  }
+  if (s.borders) {
+    B.style = s.borders.style; B.width = s.borders.width;
+    B.radiusCss = s.borders.radius; B.color = s.borders.color;
+    $("#bWidth").value = B.width;
+    const r = parseFloat(B.radiusCss);
+    if (B.radiusCss.endsWith("px")) $("#bRadius").value = Math.min(60, r);
+    renderBorder();
+  }
+  if (s.boxModel) {
+    M.w = s.boxModel.width; M.pad = s.boxModel.padding;
+    M.bw = s.boxModel.borderWidth; M.mar = s.boxModel.margin;
+    M.sizing = s.boxModel.sizing;
+    $("#mWidth").value = M.w; $("#mPad").value = M.pad;
+    $("#mBorder").value = M.bw; $("#mMargin").value = M.mar;
+    renderModel();
+  }
+  syncControls();
+}
+
+function setState(text, kind = "") {
+  $$("[data-state]").forEach(el => {
+    el.textContent = text;
+    el.className = "savestate" + (kind ? " " + kind : "");
+  });
+}
+
+async function saveSettings() {
+  if (!apiOnline && !(await checkBackend())) {
+    setState("Offline — start the server with node server.js to save.", "err");
+    return;
+  }
+  try {
+    const out = await api(`/api/settings/${deviceId}`, { method: "PUT", body: JSON.stringify(currentSettings()) });
+    setState("Saved to the server at " + new Date(out.updatedAt).toLocaleTimeString() + ".", "ok");
+  } catch (e) {
+    setState("Could not save: " + e.message, "err");
+  }
+}
+
+async function loadSettings() {
+  try {
+    const saved = await api(`/api/settings/${deviceId}`);
+    applySettings(saved);
+    setState("Loaded your saved settings.", "ok");
+  } catch (e) {
+    setState(e.message === "No settings saved for this device" ? "Nothing saved yet — press Save my settings first." : "Could not load: " + e.message, "err");
+  }
+}
+
+$$("[data-save]").forEach(b => b.addEventListener("click", saveSettings));
+$$("[data-load]").forEach(b => b.addEventListener("click", loadSettings));
+
+/* start: check the API, count the visit, restore saved settings if any */
+(async () => {
+  if (await checkBackend()) {
+    api("/api/visits", { method: "POST" })
+      .then(v => setPill("ok", `backend online · ${v.visits} visit${v.visits === 1 ? "" : "s"}`, "css-lab-api"))
+      .catch(() => {});
+    api(`/api/settings/${deviceId}`)
+      .then(saved => { applySettings(saved); setState("Your saved settings were restored.", "ok"); })
+      .catch(() => {});
+  }
+  setInterval(checkBackend, 20000);
+})();
+</script>
+</body>
+</html>

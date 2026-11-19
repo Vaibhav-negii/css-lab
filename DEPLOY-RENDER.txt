@@ -1,0 +1,98 @@
+DEPLOY ON RENDER  —  step by step
+CSS Fonts, Borders and Box Model · Vaibhav Negi · BCA (2024-2027)
+
+
+WHAT YOU GET
+------------
+https://css-lab.onrender.com   (subdomain may differ)
+
+The same page you have now, but live on the internet, with the working
+backend — so the pill reads "backend online · N visits" for anyone who
+opens the link, not just on your laptop. The report can quote that URL.
+
+
+STEP 1 — put these files on GitHub (no git commands needed)
+-----------------------------------------------------------
+1. Go to https://github.com  →  sign in  →  New repository
+2. Name: css-lab   ·   Public   ·   Do NOT add a README   →  Create
+3. On the empty repo page click "uploading an existing file"
+4. Drag in EVERYTHING inside this deploy folder:
+      server.js
+      package.json
+      render.yaml
+      .gitignore
+      public/index.html
+      data/store.json
+   (keep the public/ and data/ folders — the paths must stay the same)
+5. Click "Commit changes"
+
+If you prefer git instead:
+      cd deploy
+      git init
+      git add .
+      git commit -m "CSS Lab with Express backend"
+      git branch -M main
+      git remote add origin https://github.com/<your-name>/css-lab.git
+      git push -u origin main
+
+
+STEP 2 — create the Render service
+----------------------------------
+1. Go to https://render.com  →  sign in with GitHub (free, no card)
+2. Click  New +  →  Blueprint
+3. Choose the css-lab repository  →  Apply
+   (render.yaml already contains the build and start commands)
+4. Wait 1–3 minutes while it installs and starts.
+
+If you prefer to fill the form yourself instead of the Blueprint:
+      New +  →  Web Service  →  connect the repo, then
+      Language      : Node
+      Build Command : npm install
+      Start Command : npm start
+      Health Check  : /api/health
+      Instance      : Free
+
+
+STEP 3 — open the link
+----------------------
+Render shows the URL at the top of the service page, e.g.
+      https://css-lab.onrender.com
+
+Open it and the pill in the navigation bar must be green:
+      ● backend online · 1 visits
+
+Check the API directly:
+      https://css-lab.onrender.com/api/health
+      → {"status":"ok","service":"css-lab-api",...}
+
+
+THINGS TO KNOW
+--------------
+* Free plan sleeps after 15 minutes without visitors. The first visit
+  afterwards takes about 30 seconds to wake up — tell the examiner, or
+  open the link once before the demo.
+* The free plan has no permanent disk, so data/store.json resets when
+  the service restarts. Visitors count starting again from 0 is normal;
+  the save/load feature still works while the server is awake.
+* Nothing else is needed — no database, no API keys, no environment
+  variables. PORT is supplied by Render and server.js already reads it.
+* Server log of every request is visible in Render → your service → Logs.
+  A screenshot of that log is good evidence for the report.
+
+
+IF THE PILL IS STILL RED ON THE LIVE SITE
+-----------------------------------------
+Open  https://<your-service>.onrender.com/api/health  in a new tab.
+  · JSON answer  → backend is up; reload the page (Ctrl+F5).
+  · "Not Found"  → the repo is missing public/index.html or data/.
+  · Build failed → open Logs, check that package.json is at the repo root.
+
+
+ALTERNATIVE HOSTS (same files, same commands)
+---------------------------------------------
+Railway       railway.app      → New Project → Deploy from GitHub
+Cyclic.sh     cyclic.sh        → free Node hosting, no card
+Fly.io        fly.io           → needs the flyctl command line
+Vercel        vercel.com       → works only as a serverless function,
+                                 the JSON store would reset every request
+Glitch        glitch.com       → import from GitHub, good for demos
