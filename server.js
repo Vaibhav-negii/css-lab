@@ -12,9 +12,21 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'store.json');
 const VERSION = '1.0.0';
 const STARTED = new Date();
+
+/* the site normally sits in public/ next to this file, but it also works
+   when index.html and store.json are uploaded straight into the root */
+const SITE_DIR = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
+  ? path.join(__dirname, 'public')
+  : __dirname;
+const SITE_INDEX = path.join(SITE_DIR, 'index.html');
+const DATA_DIR = fs.existsSync(path.join(__dirname, 'data'))
+  ? path.join(__dirname, 'data')
+  : fs.existsSync(path.join(__dirname, 'store.json'))
+    ? __dirname
+    : path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'store.json');
 
 /* ---------- tiny JSON store (no database needed) ---------- */
 function readStore() {
@@ -145,18 +157,22 @@ function validate(body) {
 }
 
 /* ---------- static site ---------- */
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+if (SITE_DIR !== __dirname) {
+  app.use(express.static(SITE_DIR, { extensions: ['html'] }));
+}
 
 // unknown API routes stay JSON, not HTML
 app.use('/api', (req, res) => res.status(404).json({ error: 'Unknown endpoint', path: req.originalUrl }));
 
 // anything else goes to the single-page site
-app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.use((req, res) => res.sendFile(SITE_INDEX));
 
 /* ---------- start ---------- */
 const server = app.listen(PORT, () => {
-  console.log(`CSS Lab backend v${VERSION} listening on http://localhost:${PORT}`);
-  console.log(`Health check:  http://localhost:${PORT}/api/health`);
+  console.log(`CSS Lab backend v${VERSION} listening on port ${PORT}`);
+  console.log(`Site:  ${path.relative(__dirname, SITE_INDEX) || 'index.html'}`);
+  console.log(`Data:  ${path.relative(__dirname, DATA_FILE)}`);
+  console.log(`Health check: /api/health`);
 });
 
 // export for the test script
